@@ -24,9 +24,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      #- name: Deploy EKS
+      - name: Terraform Init
+        run: |
+          cd devops-microservice
+          terraform init
+
+      - name: Terraform Validate
+        run: |
+          cd devops-microservice
+          terraform validate
+
+      - name: Terraform Plan
+        run: |
+          cd devops-microservice
+          terraform plan
+
+      #- name: Terraform Apply
       #  run: |
       #    cd devops-microservice
-      #    terraform init
       #    terraform apply -auto-approve
-
