@@ -16,3 +16,9 @@ coverage
 *.swp
 *.swo
 *~ 
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+tests
