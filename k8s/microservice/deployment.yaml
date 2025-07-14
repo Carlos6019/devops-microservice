@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-microservice
+  namespace: microservice
+  labels:
+    app: devops-microservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: devops-microservice
+  template:
+    metadata:
+      labels:
+        app: devops-microservice
+    spec:
+      containers:
+        - name: devops-microservice
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: API_KEY
+              value: "2f5ae96c-b558-4c7b-a590-a501ae1c3f6c"
+            - name: JWT_SECRET
+              value: "your-secret-key"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
