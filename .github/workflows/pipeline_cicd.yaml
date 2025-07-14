@@ -75,6 +75,6 @@ jobs:
           name: terraform-plan
           path: .
 
-      #- name: Terraform Apply
-      #  run: |
-      #    terraform apply tfplan
+      - name: Terraform Apply
+        run: |
+          terraform apply tfplan
