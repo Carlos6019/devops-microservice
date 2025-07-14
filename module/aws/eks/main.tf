@@ -10,17 +10,59 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
-# Use default VPC
-data "aws_vpc" "default" {
-  default = true
+# Create VPC for EKS with supported AZs
+resource "aws_vpc" "eks_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "${var.cluster_name}-vpc"
+  }
 }
 
-# Get default subnets
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+# Create subnets in supported AZs (us-east-1a, us-east-1b, us-east-1c, us-east-1d, us-east-1f)
+resource "aws_subnet" "eks_public" {
+  count             = 2
+  vpc_id            = aws_vpc.eks_vpc.id
+  cidr_block        = "10.0.${count.index + 1}.0/24"
+  availability_zone = data.aws_availability_zones.available.names[count.index]
+
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "${var.cluster_name}-public-${count.index + 1}"
   }
+}
+
+# Internet Gateway
+resource "aws_internet_gateway" "eks_igw" {
+  vpc_id = aws_vpc.eks_vpc.id
+
+  tags = {
+    Name = "${var.cluster_name}-igw"
+  }
+}
+
+# Route Table
+resource "aws_route_table" "eks_public" {
+  vpc_id = aws_vpc.eks_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.eks_igw.id
+  }
+
+  tags = {
+    Name = "${var.cluster_name}-public-rt"
+  }
+}
+
+# Route Table Association
+resource "aws_route_table_association" "eks_public" {
+  count          = 2
+  subnet_id      = aws_subnet.eks_public[count.index].id
+  route_table_id = aws_route_table.eks_public.id
 }
 
 # EKS Cluster IAM Role (required)
@@ -86,7 +128,7 @@ resource "aws_eks_cluster" "main" {
   version  = var.kubernetes_version
 
   vpc_config {
-    subnet_ids              = data.aws_subnets.default.ids
+    subnet_ids              = aws_subnet.eks_public[*].id
     endpoint_private_access = false
     endpoint_public_access  = true
   }
@@ -105,7 +147,7 @@ resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.cluster_name}-node-group"
   node_role_arn   = aws_iam_role.eks_node_group.arn
-  subnet_ids      = data.aws_subnets.default.ids
+  subnet_ids      = aws_subnet.eks_public[*].id
 
   scaling_config {
     desired_size = var.node_group_desired_size
