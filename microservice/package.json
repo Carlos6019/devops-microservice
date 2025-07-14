@@ -1,0 +1,23 @@
+{
+  "name": "microservice",
+  "version": "1.0.0",
+  "main": ".eslintrc.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "eslint": "^9.31.0",
+    "jest": "^30.0.4",
+    "supertest": "^7.1.3"
+  }
+}
+
