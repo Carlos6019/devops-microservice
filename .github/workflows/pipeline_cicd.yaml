@@ -25,18 +25,13 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform Init
-        run: |
-          terraform init
+        run: terraform init
 
       - name: Terraform Validate
-        run: |
-          terraform validate
+        run: terraform validate
 
       - name: Terraform Plan
-        run: |
-          terraform plan
+        run: terraform plan
 
-      #- name: Terraform Apply
-      #  run: |
-      #    cd devops-microservice
-      #    terraform apply -auto-approve
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
