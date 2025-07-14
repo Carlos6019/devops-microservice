@@ -110,11 +110,11 @@ jobs:
       - name: Setup kubeconfig for EKS
         run: aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
+      - name: Apply namespace manifest
+        run: kubectl apply -f k8s/microservice/namespace.yaml
+
       - name: Update deployment manifest image tag
-        run: sed -i "s|IMAGE_PLACEHOLDER|$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG|g" ./k8s/microservice/deployment.yaml
+        run: sed -i "s|IMAGE_PLACEHOLDER|$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG|g" k8s/microservice/deployment.yaml
 
       - name: Deploy to EKS
-        run: |
-          kubectl apply -f ../k8s/microservice/namespace.yaml
-          kubectl apply -f ../k8s/microservice/deployment.yaml
-          kubectl apply -f ../k8s/microservice/service.yaml
+        run: kubectl apply -f k8s/microservice/
