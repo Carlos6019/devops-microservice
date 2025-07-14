@@ -37,13 +37,13 @@ output "cluster_status" {
 }
 
 output "vpc_id" {
-  description = "Default VPC ID"
-  value       = data.aws_vpc.default.id
+  description = "EKS VPC ID"
+  value       = aws_vpc.eks_vpc.id
 }
 
 output "subnet_ids" {
-  description = "Default subnet IDs"
-  value       = data.aws_subnets.default.ids
+  description = "EKS subnet IDs"
+  value       = aws_subnet.eks_public[*].id
 }
 
 output "node_group_name" {
