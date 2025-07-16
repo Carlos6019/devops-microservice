@@ -76,7 +76,8 @@ jobs:
           path: .
 
       - name: Terraform Apply
-        run: terraform apply tfplan
+        #run: terraform apply tfplan
+        run: terraform destroy tfplan
 
   deploy-app:
     needs: deploy
