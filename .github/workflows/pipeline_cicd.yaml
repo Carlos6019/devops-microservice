@@ -47,6 +47,11 @@ jobs:
           name: terraform-plan
           path: tfplan
 
+      - name: Terraform destroy
+        #run: terraform apply tfplan
+        run: terraform destroy 
+            
+
   deploy:
     needs: build
     name: Deploy-plan
