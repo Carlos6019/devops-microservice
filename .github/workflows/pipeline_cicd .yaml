@@ -47,9 +47,6 @@ jobs:
           name: terraform-plan
           path: tfplan
 
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
-
   deploy:
     needs: build
     name: Deploy-plan
@@ -78,9 +75,8 @@ jobs:
           name: terraform-plan
           path: .
 
-      - name: Terraform Apply
-        #run: terraform apply tfplan
-        run: terraform destroy tfplan
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
 
   deploy-app:
     needs: deploy
