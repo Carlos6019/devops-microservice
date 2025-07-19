@@ -36,9 +36,9 @@ jobs:
         run: |
           terraform validate
 
-      - name: Terraform Plan
+      - name: Terraform Plan Destroy
         run: |
-          terraform plan -out=tfplan
+          terraform plan -destroy -out=tfplan
         id: plan
 
       - name: Upload Terraform Plan
