@@ -22,6 +22,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Install Qlty
+        uses: qltysh/qlty-action/install@v1
+
+      - name: Run Qlty Check
+        uses: qltysh/qlty-action/check@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Terraform Init
         run: terraform init
 
