@@ -44,7 +44,10 @@ jobs:
       - name: Install Qlty CLI
         uses: qltysh/qlty-action/install@v2.2.0
 
-      - name: Configure Qlty
+      - name: Initialize Qlty
+        run: qlty init --yes
+
+      - name: Configure Qlty (Override)
         run: |
           cat > .qlty.toml << 'EOF'
           [settings]
@@ -62,10 +65,8 @@ jobs:
           osv-scanner = true
           EOF
           
-          echo "✅ Qlty configuration created"
-
-      - name: Initialize Qlty
-        run: qlty init --yes
+          echo "✅ Qlty configuration overridden"
+          cat .qlty.toml
 
       - name: Run Qlty Analysis and Generate Reports
         continue-on-error: true
@@ -97,6 +98,7 @@ jobs:
         with:
           sarif_file: qlty-report.sarif
         continue-on-error: true
+
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
