@@ -59,7 +59,7 @@ jobs:
 
       # Paso 4: Subir reporte JSON como artifact
       - name: Upload Qlty JSON Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: qlty-report-json
@@ -68,7 +68,7 @@ jobs:
 
       # Paso 5: Subir reporte SARIF como artifact
       - name: Upload Qlty SARIF Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: qlty-report-sarif
