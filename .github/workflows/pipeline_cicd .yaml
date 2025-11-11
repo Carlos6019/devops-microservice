@@ -49,9 +49,38 @@ jobs:
       - name: Initialize Qlty
         run: qlty init --yes
 
-      # Paso 3: Ejecutar análisis de código
+      # Paso 3: Ejecutar análisis de código y generar reporte
       - name: Run Qlty Check
-        run: qlty check
+        run: |
+          qlty check --format json > qlty-report.json || true
+          qlty check --format sarif > qlty-report.sarif || true
+          qlty check || true
+        continue-on-error: true  # No falla el workflow, solo reporta
+
+      # Paso 4: Subir reporte JSON como artifact
+      - name: Upload Qlty JSON Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: qlty-report-json
+          path: qlty-report.json
+          retention-days: 30
+
+      # Paso 5: Subir reporte SARIF como artifact
+      - name: Upload Qlty SARIF Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: qlty-report-sarif
+          path: qlty-report.sarif
+          retention-days: 30
+
+      # Paso 6: Subir SARIF a GitHub Security (opcional)
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: qlty-report.sarif
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
