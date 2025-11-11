@@ -41,6 +41,14 @@ jobs:
           terraform plan -destroy -out=tfplan
         id: plan
 
+      - name: Install Qlty
+        uses: qltysh/qlty-action/install@v1
+
+      - name: Run Qlty Check
+        uses: qltysh/qlty-action/check@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
