@@ -45,10 +45,13 @@ jobs:
       - name: Install Qlty
         uses: qltysh/qlty-action/install@v2.2.0
 
-      # Paso 2: Ejecutar análisis de código
+      # Paso 2: Inicializar Qlty (primera vez)
+      - name: Initialize Qlty
+        run: qlty init --yes
+
+      # Paso 3: Ejecutar análisis de código
       - name: Run Qlty Check
         run: qlty check
-
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
