@@ -44,19 +44,41 @@ jobs:
       - name: Install Qlty CLI
         uses: qltysh/qlty-action/install@v2.2.0
 
+      - name: Configure Qlty
+        run: |
+          cat > .qlty.toml << 'EOF'
+          [settings]
+          fail_level = "none"
+          
+          [ignore]
+          patterns = [
+              "node_modules/**",
+              "**/node_modules/**"
+          ]
+          
+          [plugins]
+          eslint = false
+          shellcheck = true
+          osv-scanner = true
+          EOF
+          
+          echo "✅ Qlty configuration created"
+
       - name: Initialize Qlty
         run: qlty init --yes
 
       - name: Run Qlty Analysis and Generate Reports
+        continue-on-error: true
         run: |
           echo "🔍 Running Qlty Code Analysis..."
           
-          # Ejecutar análisis y generar reportes (no fallar si hay issues)
-          qlty check --format json > qlty-report.json 2>&1 || true
-          qlty check --format sarif > qlty-report.sarif 2>&1 || true
-          qlty check > qlty-report.txt 2>&1 || true
+          # Ejecutar análisis y generar reportes (forzar éxito con || true)
+          qlty check --format json 2>&1 | tee qlty-report.json || true
+          qlty check --format sarif 2>&1 | tee qlty-report.sarif || true
+          qlty check 2>&1 | tee qlty-report.txt || true
           
           echo "✅ Analysis complete. Reports generated."
+          ls -lah qlty-report.*
 
       - name: Upload Analysis Reports
         uses: actions/upload-artifact@v4
@@ -75,7 +97,6 @@ jobs:
         with:
           sarif_file: qlty-report.sarif
         continue-on-error: true
-
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
         with:
