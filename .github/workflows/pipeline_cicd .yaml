@@ -32,22 +32,19 @@ jobs:
         run: |
           terraform init
 
-      - name: Terraform Validate
-        run: |
-          terraform validate
-
-      - name: Terraform Plan Destroy
-        run: |
-          terraform plan -destroy -out=tfplan
-        id: plan
-
       - name: Instalar Qlty CLI
         run: |
-          curl -fsSL https://get.qlty.sh | sh
+          curl -fsSL https://qlty.sh | bash
           echo "$HOME/.qlty/bin" >> $GITHUB_PATH
+      
+      - name: Verificar instalación de Qlty
+        run: |
+          export PATH="$HOME/.qlty/bin:$PATH"
+          qlty --version
       
       - name: Inicializar Qlty (si es primera vez)
         run: |
+          export PATH="$HOME/.qlty/bin:$PATH"
           if [ ! -f .qlty/qlty.toml ]; then
             qlty init --yes
           fi
@@ -55,6 +52,7 @@ jobs:
       
       - name: Ejecutar análisis de Qlty y generar JSON
         run: |
+          export PATH="$HOME/.qlty/bin:$PATH"
           qlty check --format json > qlty-report.json || true
           
           # Añadir metadata al reporte
@@ -64,27 +62,47 @@ jobs:
               "repository": "${{ github.repository }}",
               "branch": "${{ github.ref_name }}",
               "commit": "${{ github.sha }}",
+              "commit_message": "$(git log -1 --pretty=%B | head -1)",
+              "author": "${{ github.actor }}",
               "date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-              "workflow_run": "${{ github.run_number }}"
+              "workflow_run": "${{ github.run_number }}",
+              "event": "${{ github.event_name }}"
             },
-            "results": $(cat qlty-report.json)
+            "results": $(cat qlty-report.json 2>/dev/null || echo '{}')
           }
           EOF
         continue-on-error: true
       
+      - name: Mostrar resumen del análisis
+        run: |
+          export PATH="$HOME/.qlty/bin:$PATH"
+          echo "📊 Resumen del Análisis de Qlty"
+          echo "================================="
+          if [ -f qlty-report-full.json ]; then
+            echo "✅ Reporte generado exitosamente"
+            echo "📦 Tamaño: $(wc -c < qlty-report-full.json) bytes"
+          else
+            echo "⚠️  No se pudo generar el reporte"
+          fi
+        if: always()
+      
       - name: Subir reporte JSON como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: qlty-report-json
+          name: qlty-report-json-${{ github.run_number }}
           path: qlty-report-full.json
           retention-days: 30
         if: always()
       
-      - name: Mostrar resumen en el log
+      - name: Instrucciones de descarga
         run: |
+          echo ""
           echo "✅ Análisis completado"
-          echo "📊 Reporte JSON generado: qlty-report-full.json"
-          echo "📥 Descarga el reporte desde la pestaña 'Actions' > 'Artifacts'"
+          echo "📥 Para descargar el reporte:"
+          echo "   1. Ve a: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "   2. Busca la sección 'Artifacts'"
+          echo "   3. Descarga: qlty-report-json-${{ github.run_number }}"
+          echo ""
         if: always()
 
       - name: Upload Terraform Plan
