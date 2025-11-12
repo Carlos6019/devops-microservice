@@ -42,31 +42,40 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init
+
       - name: Install Qlty CLI
         if: ${{ inputs.qltyCoverage == 'true' || github.event_name == 'push' }}
         run: |
           curl -fsSL https://qlty.sh | bash
           echo "$HOME/.qlty/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.qlty/bin:$PATH"
+          qlty version || echo "Qlty CLI installed but version not detected"
 
       - name: Run Qlty Analysis
         if: ${{ inputs.qltyCoverage == 'true' || github.event_name == 'push' }}
         run: |
+          set -e
+          export PATH="$HOME/.qlty/bin:$PATH"
+
           # Inicializar Qlty si no existe configuración
           if [ ! -f .qlty/qlty.toml ]; then
+            echo "Initializing Qlty configuration..."
             qlty init --yes
           fi
 
-          # Ejecutar análisis de código
+          # Ejecutar análisis de código (sin romper el pipeline)
           echo "::group::Qlty Code Analysis"
-          qlty check --all --summary || true
+          qlty check --all --summary --no-formatters || true
           echo "::endgroup::"
 
           # Procesar cobertura localmente (sin subir a cloud)
           if [ -n "${{ inputs.qltyCoverageFiles }}" ]; then
             echo "::group::Qlty Coverage Analysis"
+            ls -l ${{ inputs.qltyCoverageFiles }} || echo "⚠️ Archivo de cobertura no encontrado"
             qlty coverage publish --dry-run ${{ inputs.qltyCoverageFiles }} || true
             echo "::endgroup::"
           fi
+
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
