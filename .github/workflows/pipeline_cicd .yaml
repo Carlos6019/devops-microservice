@@ -43,13 +43,13 @@ jobs:
         run: |
           terraform init
       - name: Install Qlty CLI
-        if: ${{ inputs.qltyCoverage == 'true' }}
+        if: ${{ inputs.qltyCoverage == 'true' || github.event_name == 'push' }}
         run: |
           curl -fsSL https://qlty.sh | bash
           echo "$HOME/.qlty/bin" >> $GITHUB_PATH
 
       - name: Run Qlty Analysis
-        if: ${{ inputs.qltyCoverage == 'true' }}
+        if: ${{ inputs.qltyCoverage == 'true' || github.event_name == 'push' }}
         run: |
           # Inicializar Qlty si no existe configuración
           if [ ! -f .qlty/qlty.toml ]; then
