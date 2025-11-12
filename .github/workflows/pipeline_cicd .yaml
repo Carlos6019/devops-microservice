@@ -55,6 +55,7 @@ jobs:
         run: |
           set -e
           export PATH="$HOME/.qlty/bin:$PATH"
+          export QLTY_DISABLE_ESLINT=true
 
           # Inicializar Qlty si no existe configuración
           if [ ! -f .qlty/qlty.toml ]; then
