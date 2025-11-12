@@ -56,6 +56,11 @@ jobs:
           echo "✅ Qlty analysis completed. Results saved in qlty-results.json"
           cat qlty-results.json
 
+      - name: Upload Qlty Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: qlty-results
+          path: qlty-results.json
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
