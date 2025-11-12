@@ -50,7 +50,6 @@ jobs:
           echo "$HOME/.qlty/bin" >> $GITHUB_PATH
           export PATH="$HOME/.qlty/bin:$PATH"
           qlty version || echo "Qlty CLI installed but version not detected"
-
       - name: Run Qlty Analysis
         if: ${{ inputs.qltyCoverage == 'true' || github.event_name == 'push' }}
         run: |
@@ -63,18 +62,28 @@ jobs:
             qlty init --yes
           fi
 
-          # Ejecutar análisis de código (sin romper el pipeline)
           echo "::group::Qlty Code Analysis"
-          qlty check --all --summary --no-formatters || true
+          # Ejecutar Qlty y exportar resultados en JSON sin romper el pipeline
+          qlty check --all --format json > qlty-results.json || true
           echo "::endgroup::"
+
+          echo "📄 Archivo generado: qlty-results.json"
+          cat qlty-results.json || echo "⚠️ No se generó archivo de resultados"
 
           # Procesar cobertura localmente (sin subir a cloud)
           if [ -n "${{ inputs.qltyCoverageFiles }}" ]; then
             echo "::group::Qlty Coverage Analysis"
-            ls -l ${{ inputs.qltyCoverageFiles }} || echo "⚠️ Archivo de cobertura no encontrado"
             qlty coverage publish --dry-run ${{ inputs.qltyCoverageFiles }} || true
             echo "::endgroup::"
           fi
+
+      - name: Upload Qlty Results
+        if: ${{ inputs.qltyCoverage == 'true' || github.event_name == 'push' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qlty-results
+          path: qlty-results.json
+
 
 
       - name: Upload Terraform Plan
