@@ -3,6 +3,17 @@ name: build and deploy
 on:
   push:
     branches: master
+  workflow_call:
+    inputs:
+      qltyCoverage:
+        description: "Qlty Coverage"
+        required: false
+        type: string
+        default: "false"
+      qltyCoverageFiles:
+        description: "Qlty Coverage Files (glob patterns or comma-separated paths)"
+        required: false
+        type: string
 
 env:
   AWS_REGION: us-east-1
@@ -31,79 +42,31 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init
-
-      - name: Instalar Qlty CLI
+      - name: Install Qlty CLI
+        if: ${{ inputs.qltyCoverage == 'true' }}
         run: |
           curl -fsSL https://qlty.sh | bash
           echo "$HOME/.qlty/bin" >> $GITHUB_PATH
-      
-      - name: Verificar instalación de Qlty
+
+      - name: Run Qlty Analysis
+        if: ${{ inputs.qltyCoverage == 'true' }}
         run: |
-          export PATH="$HOME/.qlty/bin:$PATH"
-          qlty --version
-      
-      - name: Inicializar Qlty (si es primera vez)
-        run: |
-          export PATH="$HOME/.qlty/bin:$PATH"
+          # Inicializar Qlty si no existe configuración
           if [ ! -f .qlty/qlty.toml ]; then
             qlty init --yes
           fi
-        continue-on-error: true
-      
-      - name: Ejecutar análisis de Qlty y generar JSON
-        run: |
-          export PATH="$HOME/.qlty/bin:$PATH"
-          qlty check --format json > qlty-report.json || true
-          
-          # Añadir metadata al reporte
-          cat > qlty-report-full.json << EOF
-          {
-            "metadata": {
-              "repository": "${{ github.repository }}",
-              "branch": "${{ github.ref_name }}",
-              "commit": "${{ github.sha }}",
-              "commit_message": "$(git log -1 --pretty=%B | head -1)",
-              "author": "${{ github.actor }}",
-              "date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-              "workflow_run": "${{ github.run_number }}",
-              "event": "${{ github.event_name }}"
-            },
-            "results": $(cat qlty-report.json 2>/dev/null || echo '{}')
-          }
-          EOF
-        continue-on-error: true
-      
-      - name: Mostrar resumen del análisis
-        run: |
-          export PATH="$HOME/.qlty/bin:$PATH"
-          echo "📊 Resumen del Análisis de Qlty"
-          echo "================================="
-          if [ -f qlty-report-full.json ]; then
-            echo "✅ Reporte generado exitosamente"
-            echo "📦 Tamaño: $(wc -c < qlty-report-full.json) bytes"
-          else
-            echo "⚠️  No se pudo generar el reporte"
+
+          # Ejecutar análisis de código
+          echo "::group::Qlty Code Analysis"
+          qlty check --all --summary || true
+          echo "::endgroup::"
+
+          # Procesar cobertura localmente (sin subir a cloud)
+          if [ -n "${{ inputs.qltyCoverageFiles }}" ]; then
+            echo "::group::Qlty Coverage Analysis"
+            qlty coverage publish --dry-run ${{ inputs.qltyCoverageFiles }} || true
+            echo "::endgroup::"
           fi
-        if: always()
-      
-      - name: Subir reporte JSON como artefacto
-        uses: actions/upload-artifact@v4
-        with:
-          name: qlty-report-json-${{ github.run_number }}
-          path: qlty-report-full.json
-          retention-days: 30
-        if: always()
-      
-      - name: Instrucciones de descarga
-        run: |
-          echo ""
-          echo "✅ Análisis completado"
-          echo "📥 Para descargar el reporte:"
-          echo "   1. Ve a: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "   2. Busca la sección 'Artifacts'"
-          echo "   3. Descarga: qlty-report-json-${{ github.run_number }}"
-          echo ""
-        if: always()
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
